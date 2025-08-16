@@ -4,6 +4,8 @@ import signal
 import sys
 import time
 import re
+import threading
+import requests
 
 processes = []
 
@@ -53,6 +55,59 @@ def kill_process_on_port(port):
     except Exception as e:
         print(f"Error killing process on port {port}: {e}")
 
+def wait_for_service(port, service_name, timeout=30):
+    """Wait for a service to be available on the specified port."""
+    print(f"Waiting for {service_name} to be available on port {port}...")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(f'http://localhost:{port}/health', timeout=1)
+            if response.status_code == 200:
+                print(f"{service_name} is ready on port {port}")
+                return True
+        except:
+            pass
+        time.sleep(1)
+    print(f"Warning: {service_name} did not become available on port {port} within {timeout} seconds")
+    return False
+
+def start_service_with_retry(service, max_retries=3):
+    """Start a service with retry logic."""
+    for attempt in range(max_retries):
+        try:
+            print(f"Starting {service['name']} service (attempt {attempt + 1}/{max_retries})...")
+            pro = subprocess.Popen(
+                service["command"],
+                shell=True,
+                preexec_fn=os.setsid,
+                cwd=service["cwd"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True
+            )
+            
+            # Give the process a moment to start
+            time.sleep(2)
+            
+            # Check if process is still running
+            if pro.poll() is None:
+                print(f"{service['name']} started successfully")
+                return pro
+            else:
+                # Process died, read output for debugging
+                output, _ = pro.communicate()
+                print(f"{service['name']} failed to start. Output: {output}")
+                
+        except Exception as e:
+            print(f"Error starting {service['name']} service (attempt {attempt + 1}): {e}")
+            
+        if attempt < max_retries - 1:
+            print(f"Retrying {service['name']} in 3 seconds...")
+            time.sleep(3)
+    
+    print(f"Failed to start {service['name']} after {max_retries} attempts")
+    return None
+
 # Kill existing services before setting up the database
 for port in [5005, 5007, 5000, 5175]:
     kill_process_on_port(port)
@@ -96,21 +151,25 @@ services = [
     }
 ]
 
+# Start services with proper error handling and health checks
 for service in services:
-    try:
-        print(f"Starting {service['name']} service...")
-        pro = subprocess.Popen(
-            service["command"],
-            shell=True,
-            preexec_fn=os.setsid,
-            cwd=service["cwd"],
-            stderr=subprocess.STDOUT
-        )
+    pro = start_service_with_retry(service)
+    if pro:
         processes.append(pro)
-    except Exception as e:
-        print(f"Error starting {service['name']} service: {e}")
+        
+        # Wait for critical services to be ready
+        if service['name'] in ['journal_service']:
+            wait_for_service(service['port'], service['name'])
+    else:
+        print(f"Critical service {service['name']} failed to start. Continuing with other services...")
 
 print("All services started.")
+print("Services status:")
+for i, service in enumerate(services):
+    if i < len(processes) and processes[i].poll() is None:
+        print(f"  ✓ {service['name']} - Running")
+    else:
+        print(f"  ✗ {service['name']} - Not running")
 
 # Keep the main script alive to manage child processes
 try:
