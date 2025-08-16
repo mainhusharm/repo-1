@@ -1,7 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL, API_CONFIG } from './config';
 
 const api = axios.create({
-  baseURL: '/api', // Journal service URL
+  baseURL: API_BASE_URL,
+  timeout: API_CONFIG.timeout,
+  headers: API_CONFIG.headers,
 });
 
 // Add a response interceptor

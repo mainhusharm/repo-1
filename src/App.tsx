@@ -25,9 +25,10 @@ import AdminMpinLogin from './components/AdminMpinLogin';
 import AdminDashboard from './components/AdminDashboard';
 import AffiliateLinks from './components/AffiliateLinks';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { TradingPlanProvider, useTradingPlan } from './contexts/TradingPlanContext';
-import { AdminProvider } from './contexts/AdminContext';
+import { AdminProvider, useAdmin } from './contexts/AdminContext';
 import { clearState } from './trading/dataStorage';
 import Features from './components/Features';
 import About from './components/About';
@@ -44,6 +45,7 @@ import EnhancedCustomerServiceDashboard from './components/EnhancedCustomerServi
 const AppContent = () => {
   const [theme, setTheme] = useState(localStorage.getItem('dashboard-theme') || 'concept1');
   const { logout: userLogout } = useUser();
+  const { logout: adminLogout } = useAdmin();
   const { resetPlan } = useTradingPlan();
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +62,11 @@ const AppContent = () => {
     resetPlan();
     clearState();
     navigate('/signin');
+  };
+
+  const handleAdminLogout = () => {
+    adminLogout();
+    navigate('/admin');
   };
 
   const handleThemeChange = (selectedTheme: string) => {
@@ -126,9 +133,9 @@ const AppContent = () => {
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
-              <AdminDashboard onLogout={handleLogout} />
-            </ProtectedRoute>
+            <AdminProtectedRoute>
+              <AdminDashboard onLogout={handleAdminLogout} />
+            </AdminProtectedRoute>
           }
         />
         <Route path="/affiliate-links" element={<AffiliateLinks />} />

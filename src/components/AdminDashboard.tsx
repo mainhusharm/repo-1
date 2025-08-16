@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Users, RadioTower, Settings, LogOut, Cpu, Send } from 'lucide-react';
 import api from '../api';
 import SettingsModal from './SettingsModal';
-import FuturisticBackground from './FuturisticBackground';
-import FuturisticCursor from './FuturisticCursor';
 import CryptoDashboard from './CryptoDashboard';
 import NewForexSignalGenerator from './NewForexSignalGenerator';
 import LivePriceFeed from './LivePriceFeed';
@@ -117,8 +115,6 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
         `}
       </style>
       <div className="min-h-screen bg-gray-950 text-gray-300 font-inter">
-        <FuturisticBackground />
-        <FuturisticCursor />
         <div className="relative z-10">
           <header className="flex justify-between items-center p-4 bg-gray-900/70 border-b border-blue-500/30 backdrop-blur-sm">
             <div className="flex items-center space-x-3">
