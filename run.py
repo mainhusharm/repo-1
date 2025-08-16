@@ -7,6 +7,15 @@ import re
 import threading
 import requests
 
+# Force development environment
+os.environ['FLASK_ENV'] = 'development'
+os.environ['FLASK_DEBUG'] = '1'
+
+# Remove production environment file if it exists to prevent conflicts
+if os.path.exists('.env.production'):
+    print("Temporarily renaming .env.production to avoid conflicts...")
+    os.rename('.env.production', '.env.production.backup')
+
 processes = []
 
 def install_python_dependencies():
