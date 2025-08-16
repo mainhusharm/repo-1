@@ -9,6 +9,25 @@ import requests
 
 processes = []
 
+def install_python_dependencies():
+    """Install Python dependencies for all services."""
+    requirements_files = [
+        'journal/requirements.txt',
+        'forex_data_service/requirements.txt'
+    ]
+    
+    for req_file in requirements_files:
+        if os.path.exists(req_file):
+            print(f"Installing dependencies from {req_file}...")
+            try:
+                subprocess.run(['pip3', 'install', '-r', req_file], check=True)
+                print(f"Dependencies from {req_file} installed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error installing dependencies from {req_file}: {e}")
+                sys.exit(1)
+        else:
+            print(f"Warning: {req_file} not found, skipping...")
+
 def signal_handler(sig, frame):
     print('Stopping servers...')
     for p in processes:
@@ -111,6 +130,9 @@ def start_service_with_retry(service, max_retries=3):
 # Kill existing services before setting up the database
 for port in [5005, 5007, 5000, 5175]:
     kill_process_on_port(port)
+
+# Install Python dependencies first
+install_python_dependencies()
 
 # Build the frontend
 build_frontend()
